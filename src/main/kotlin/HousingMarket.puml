@@ -1,0 +1,144 @@
+@startuml
+
+' undocumentyed feature for spacing:
+skinparam nodesep 80
+'skinparam ranksep 40
+
+'hide members
+
+class HousingMarket {
++ advertise(home : Property)
++ advertise(home : List<Property>)
++ {static} showAdvertisements(List<Property>)
++ search(query : (Property) -> Boolean) : List<Property>
++ search(minPrice : Int = 0, maxPrice : Int = Int.MaxValue)
++ {static} interest : Double
+- allHouses : MutableList<Property>
+}
+
+'position class PropertyMarket above class Property
+HousingMarket -[hidden]-> Property
+HousingMarket o-- "allHouses 0..*" Property
+
+abstract class Property {
++ address: String {readOnly}
++ livingArea: Int {readOnly}
++ priceAsked: Int?
++ allBids : List<Bid>
++ doOffer(customer: Customer, priceOffered: Int)
+- isAccepted(priceOffered : Int) : Boolean
++ {abstract} getMonthlyPayments() : Int?
+}
+note top of Property : this class represents an advertisement for a real-estate broker
+
+interface Locatable {
++ getLocation() : Location
+}
+
+Locatable <|.. Property
+
+Garage -[hidden]- Apartment
+Apartment -[hidden]-House
+
+class Garage {
++ hasElectricity : Boolean {readOnly}
++ getMonthlyPayments() : Int?
+}
+
+class Apartment{
++ floor : Int {readOnly}
++ paymentHoa : Int {readOnly}
++ getMonthlyPayments() : Int?
+}
+note right of Apartment::paymentHoa
+monthly payment for House Owner Association (VVE)
+end note
+
+class House {
++ type : HousingType {readOnly}
++ plotArea : Int {readOnly}
++ getMonthlyPayments() : Int?
+}
+note right of House::plotArea
+plot area in m2
+end note
+
+enum HousingType {
+DETACHED,SEMI_DETACHED, TERRACED, BUNGALOW
+}
+House -[hidden]- HousingType
+note right of HousingType
+vrijstaand, half vrijstaand, rijtjeswoning, bungalow
+end note
+
+
+
+class Picture {
++ description : String {readOnly}
++ image : Url {readOnly}
+}
+
+Property o-[hidden]> Picture
+Property o-- Picture
+
+'define specializations (inheritence)
+Property <|-- House
+Property <|-- Apartment
+Property <|-- Garage
+
+class Bid {
++ customer : Customer {readOnly}
++ priceOffered : Int {readOnly}
++ timeOfBid : Instant {readOnly}
+}
+
+'a Property has a strong composition relation with a collection of Bid objects
+Bid "_bids 0..*" --*  Property
+'position class Bid to the left of class Property
+Bid -[hidden]> Property
+
+class Customer {
++ name : String {readOnly}
++ email : String {readOnly}
+}
+
+Bid -[hidden]- Customer
+Bid --> Customer
+
+note right of Property::priceAsked
+if null -> 'prijs op aanvraag'
+end note
+
+note right of Property::doOffer
+if (isAccepted(bid)) -> allBids.add(bid)
+end note
+
+note right of Property::getMonthlyPayments
+Estimated yearly payment:
+- mortgage (based on interest and repayment)
+- energy:
+     detached house, bungalow -> livingArea * 15
+     semi-detached house -> livingArea * 13
+     terraced house -> livingArea * 11
+     apartment --> livingArea * 9
+
+Additional yearly costs:
+- House: yearly cost maintenance: 1% of price + plotArea * 5
+- Apartment: cost vve (livingArea * 15%)
+end note
+
+
+class Legend {
++ publicVar : T1
++ publicVal : T1 {readOnly}
++ {static} staticVar
+# protectedField : T2
+- privateField : T3
++ publicFun() : T1
++ {static}staticFun()
++ {abstract}abstractFun() : T1
+# protectedFun() : T2
+- privateFun() : T3
+}
+
+@enduml
